@@ -1,0 +1,46 @@
+#!/bin/sh
+
+set -e
+
+options=$(getopt -s sh -n $0 t:o: "$@")
+if [ $? -ne 0 ]; then
+    echo >&2 "Usage: $0 [-t template] [-o output] manifests..."
+	exit 1
+fi
+
+template=
+output=output.img
+for option in $options; do
+    case "$option" in
+        -t) shift; template=$1; shift;;
+        -o) shift; output=$1; shift;;
+        --) break;;
+    esac
+done
+manifests="$@"
+if [ "$template" = "" ]; then
+    echo >&2 "$0: you have to supply a template file (try something in '2.0.4/templates')"
+    exit 1
+fi
+if [ "$manifests" = "" ]; then
+    echo >&2 "$0: you have to supply at least one manifest (try something in '2.0.4/manifests')"
+    exit 1
+fi
+
+ROOT=$PWD/minix
+
+echo "Template file: $template"
+echo "Output image:  $output"
+echo "Manifests:     $manifests"
+
+mnt=$(mktemp -d /tmp/minix32-mnt-XXXXXX)
+echo "Mount point:  $mnt"
+
+zcat $ROOT/templates/$template > $output
+sudo mount $output $mnt -o loop 2>/dev/null || sudo mount $output $mnt -o loop,offset=512
+trap "sudo umount $mnt; rmdir $mnt" EXIT
+
+for mf in $manifests; do
+    echo "Running manifest $mf"
+    (cd $mnt && sudo sh -c "set -e && . ../scripts/mkmanifest.sh && ROOT=$ROOT && . $ROOT/manifests/$mf")
+done
