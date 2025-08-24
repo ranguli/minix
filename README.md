@@ -1,67 +1,43 @@
-# Minix 2 (i386) — Pack/Unpack Dev Image
+# MINIX 2
 
-This repository produces a bootable MINIX 2 (32‑bit i386) hard disk image entirely from host‑side files using a manifest workflow. No binary `.img` is tracked in VCS. The filesystem already lives under `minix/fs`, so you can pack, boot in QEMU, and unpack changes back into regular files without any external image.
+## What is this?
 
-## Features
-- Manifest system (create device nodes, permissions, copy files)
-- `pack` builds `hd.img` from `minix/fs` and `minix/manifests`
-- `unpack` syncs changes from the VM back into `minix/fs`
-- No `.img` in VCS — images are generated locally
+This repository contains a full-fledged (unofficial) distribution of MINIX 2 which has been modernized from it's original form  (a series of raw floppy disk images to be installed on real hardware) to a coherent repository that uses version control and scripts to easily create MINIX systems in QEMU for easy tinkering. 
 
-## Requirements
-- Linux host
-- `qemu-system-i386`, `rsync`, `sudo`
-- Kernel module `minix` available: `sudo modprobe minix`
+## Why did you make this?
 
-## Layout
-- `scripts/`
-  - `pack.sh`: build `hd.img` from template + manifests
-  - `unpack.sh`: sync VM → host into `minix/fs`
-  - `run-qemu.sh`: run QEMU with `hd.img`
-  - `mkmanifest`: pack helper (template + mount + manifests)
-  - `mkmanifest.sh`: helper functions for manifests (`copyfile`, `include`)
-- `minix/`
-  - `fs/`: host‑side working tree (what goes into the image)
-  - `manifests/`: create device nodes, set perms, copy files
-  - `templates/hd-64MB.img.gz`: empty, bootable HD template (boot 2.19). Floppy templates are not used.
+Because of the way things worked when MINIX 2 was released. MINIX 2 was distributed as a series of floppy disk images, which all had to be installed (like any OS of the day). There wasn't a `git clone https://minix2.org && make && ./run-minix`. Setting up MINIX 2 to be structured and function like a project repository in the way we think of it today is actually fairly challenging (for a whole host of boring techical reasons I won't get into nor do I even fully understand).
+
+There are already (at least) two existing projects that aim to achieve a similar goal. This project is essentially a fork of [davidgiven/minix2](https://github.com/davidgiven/minix2). This project handles those fairly challenging technical reasons I mentioned earlier, and allows simple conversion back and forth between a Git repository containing a MINIX filesystem (with the codebase) and a MINIX-compatible QEMU hard disk `.img`. However, it only supports 16-bit MINIX, and it also supports MINIX 1.7 (which I'm not interested in).
+
+So I took the parts I was interested in (the QEMU <-> git plumbing glue), but actually used a 32-bit MINIX disk image from a second, similar project, [o-oconnel/minixfromscratch](https://github.com/o-oconnel/minixfromscratch) as the seed to bootstrap the initial system, then unpacked it (_with the glue_), and here we are.
+
+## Why MINIX 2?
+
+MINIX is really cool operating system in general - it's a full UNIX-like operating system that has an almost 1000 page book describing it's internals in a very high level of detail. It's literally designed to be a teaching/learning tool. To me MINIX 2 sits at a sweet spot between not too old (i.e we at least have C89 instead of K&R C) but not too complex to tinker with (MINIX 3 has a whole bunch of crazy stuff going on with integrating NetBSD compatibility, etc. It's a lot to try and wrap your head around).
+
 
 ## Quick start
 ```bash
-cd minix32
 
-# Build the image
+# Build a QEMU VM image based on the contents of minix/
 make pack
 
-# Run in QEMU
+# Run that image in QEMU
 make run
 
-# After changes in VM: clean exit (^D), close QEMU, then
+# After you're done modifying or recompiling MINIX inside the VM, run 'shutdown' (necessary to prevent data corruption!)
+# then to have your work reflected back in this repostiory simply run:
 make unpack
+
+# Now the repository reflects the state of the VMs filesystem
 ```
 
-### Boot behavior (pack profile)
-The pack manifest sets `/etc/ttytab` so the console starts a small script `/etc/pack.rc`. That script logs you in as `root` and shuts down when you exit.
-
-## Manifests
-Key manifests under `minix/manifests/`:
-- `_core.manifest`: creates device nodes/permissions/owners
-- `_everything.manifest`: rsyncs all host files into the image
-- `pack.manifest`: pack profile; includes `_core` + `_everything`; sets `/etc/ttytab` to run `sh /etc/pack.rc`
-
-## Makefile
-Convenience targets: `make pack`, `make run`, `make unpack`, `make clean`.
-
-## Common issues
-- QEMU: “Could not open hd.img: Permission denied” → remove a root‑owned image: `sudo rm -f hd.img`, then `make pack`
-- Boot: “Can’t load minix” → your `minix/fs` lacks the kernel or base system. Restore from VCS or copy from a known good tree.
-- Mount errors: `unknown filesystem type 'minix'` → `sudo modprobe minix`
-
 ## Credits
-- Templates, manifests, and pack/unpack approach adapted from `davidgiven/minix2` (Minix QD).
-- MINIX 2 (i386) image layout and offsets referenced from `o-oconnell/minixfromscratch`.
-- All original licenses retained (BSD 3‑Clause where applicable). Upstreams:
+
   - https://github.com/davidgiven/minix2
   - https://github.com/o-oconnell/minixfromscratch
 
 ## License
-See individual file headers and upstream notices. Scripts derived from the above are BSD 3‑Clause.
+
+This repository is licensed under the BSD 3-Clause License, the same license that MINIX has (it was originally proprietary, but was open-sourced). See LICENSE for more information.
