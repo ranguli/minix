@@ -1,8 +1,9 @@
 # MINIX 2
+A modernized (unofficial) distribution of 32-bit MINIX 2 for QEMU 
 
 ## What is this?
 
-This repository contains a full-fledged (unofficial) distribution of MINIX 2 which has been modernized from it's original form  (a series of raw floppy disk images to be installed on real hardware) to a coherent repository that uses version control and scripts to easily create MINIX systems in QEMU for easy tinkering. 
+This repository contains a full-fledged (unofficial) distribution of MINIX 2 (32-bit) which has been modernized from it's original form  (a series of raw floppy disk images to be installed on real hardware) to a coherent repository that uses version control and scripts to easily create MINIX systems in QEMU for easy tinkering. 
 
 ## Why did you make this?
 
