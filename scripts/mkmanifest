@@ -29,6 +29,10 @@ fi
 
 ROOT=$PWD/minix
 
+# Resolve absolute path to the helper script so sourcing works from the mount dir
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+MKMANIFEST_SH="$SCRIPT_DIR/mkmanifest.sh"
+
 echo "Template file: $template"
 echo "Output image:  $output"
 echo "Manifests:     $manifests"
@@ -42,5 +46,5 @@ trap "sudo umount $mnt; rmdir $mnt" EXIT
 
 for mf in $manifests; do
     echo "Running manifest $mf"
-    (cd $mnt && sudo sh -c "set -e && . ../scripts/mkmanifest.sh && ROOT=$ROOT && . $ROOT/manifests/$mf")
+    (cd $mnt && sudo sh -c "set -e && . '$MKMANIFEST_SH' && ROOT='$ROOT' && . '$ROOT/manifests/$mf'")
 done
