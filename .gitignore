@@ -3,3 +3,5 @@
 
 # QEMU/Build artifacts
 *.o
+
+*.bak
